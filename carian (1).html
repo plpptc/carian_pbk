@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      input {
+        padding: 10px;
+        font-size: 16px;
+        width: 100%;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        display: none;
+      }
+      th, td {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        text-align: left;
+      }
+      tr:hover {
+        background-color: #f9f9f9;
+      }
+    </style>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+      google.charts.load('current', { packages: ['table'] });
+      google.charts.setOnLoadCallback(fetchData);
+
+      let originalData = [];
+
+      function fetchData() {
+        const queryString = encodeURIComponent("SELECT A,B,C,D,E,F,G");
+        const sheetID = "1aWusPBvvCKfWGiy-1bcdgTIOVMTTt7LD0oh1i_ZgQYw";
+        const sheetName = "DATA";
+        const url = \`https://docs.google.com/spreadsheets/d/\${sheetID}/gviz/tq?sheet=\${sheetName}&tq=\${queryString}\`;
+
+        fetch(url)
+          .then(res => res.text())
+          .then(rep => {
+            const json = JSON.parse(rep.substring(47).slice(0, -2));
+            const data = json.table.rows.map(r => r.c.map(c => (c ? c.v : "")));
+            originalData = data;
+          });
+      }
+
+      function renderTable(data) {
+        const table = document.getElementById("resultTable");
+        const tbody = document.getElementById("table-body");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+          table.style.display = "none";
+          return;
+        }
+
+        data.forEach(row => {
+          const tr = document.createElement("tr");
+          row.forEach(cell => {
+            const td = document.createElement("td");
+            td.textContent = cell;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+
+        table.style.display = "table";
+      }
+
+      function searchTable() {
+        const query = document.getElementById("search").value.toLowerCase();
+        if (query.trim() === "") {
+          renderTable([]);
+          return;
+        }
+        const filtered = originalData.filter(row =>
+          row.some(cell => cell.toString().toLowerCase().includes(query))
+        );
+        renderTable(filtered);
+      }
+    </script>
+  </head>
+  <body>
+    <h2>Carian Data Peserta PBK</h2>
+    <input type="text" id="search" oninput="searchTable()" placeholder="Taip nama, tempat bertugas, gred, dll...">
+    <table id="resultTable">
+      <thead>
+        <tr>
+          <th>NAMA</th>
+          <th>GRED</th>
+          <th>TEMPAT BERTUGAS</th>
+          <th>NO KP</th>
+          <th>BIDANG</th>
+          <th>STATUS</th>
+          <th>TAHUN LANTIKAN</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </body>
+</html>
